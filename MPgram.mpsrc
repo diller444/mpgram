@@ -1,0 +1,376 @@
+Program pidrila;
+uses proweb;
+uses xml;
+uses im;
+uses imtostr;
+Var
+bg,tg,tglogo:image;
+str,dannie,massiv,goy,phonevalue,code,thischat,sosij: string;
+hh,line,wi,j,k,zapros,forma,poz,keyCode,keyClick,p,up,ch,endmessage,imgcount,next,user,cum,load,total: integer;
+nn: char;
+avas: Array [0..10] of string;
+img: Array [0..19] of string;
+rs:RecordStore;
+cont,click,ktk,cm : command; 
+conn:http;
+
+Function DLT3 (start: integer): integer;
+var
+i, len, oi: integer;
+begin
+wi:=210;
+i:=start; len:=Length(str); oi:=i;
+while (GetStringWidth(Copy(str,start,i))<wi-4) and (i<len) and (GetChar(str,i)<>nn) do
+begin
+if GetChar(str,i)=' ' then oi:=i; i:=i+1;
+end;
+if (oi<>i) and (GetChar(str,i)<>nn) then
+begin
+j:=oi;
+repeat j:=j+1; until (GetChar(str,j)=' ') or (j>len);
+if j<len then
+if GetStringWidth(Copy(str,oi,j))<wi-4 then i:=oi;
+end;	
+if (GetChar(str,i)=' ') or (GetChar(str,i)=nn) then
+i:=i+1;
+DLT3:=i;
+end;
+
+Procedure Print(s9: string; gg: integer);
+var
+finish, start, iks: integer;
+begin
+iks:=4;
+If GetStringWidth(s9)<wi then
+begin
+SetColor(255,255,255);
+FillRect(iks-2,gg,214,line);
+SetColor(0,0,0);
+DrawText(s9,iks,gg);
+up:=up+8+line;
+end;
+else
+begin
+start:=0; str:=s9;
+for k:=0 to 100 do
+begin
+finish:=DLT3(start);
+if(length(Copy(str,start,finish))=0) then 
+begin
+start:=finish;
+up:=up+8;
+break;
+end;
+SetColor(0,0,0);
+FillRect(iks-2,gg+k*line,214,line);
+SetColor(255,255,255);
+DrawText(Copy(str,start,finish),iks,gg+k*line);
+up:=up+line;
+start:=finish;
+end;
+end;
+end;
+
+Procedure Vkid; FORWARD;
+
+Procedure Dialog(thischat: string);
+begin
+zapros:=q_request('http://f0477777.xsph.ru/telehuyka/?peer='+thischat+'&user='+ReadRecordStoreEntry(rs,1)+'&code='+ReadRecordStoreEntry(rs,2), GET, '', 'none');
+dannie:=get_data;
+close;
+poz:=8+line*2;
+load:=0;
+begin
+repeat
+keyCode := GetKeyPressed; 
+keyClick := GetKeyClicked; 
+if KeyToAction(keyCode) = GA_UP then poz := poz + 16;
+if KeyToAction(keyCode) = GA_DOWN then poz := poz - 16;
+if keyCode = 35 then Vkid;
+if poz >= 8+line*2 then poz := 8+line*2;
+if (total+poz <= GetHeight-8-line) and (total<>0) then poz := GetHeight-8-line-total;
+if KeyToAction(keyCode) = GA_FIRE then begin
+debug(IntegerToString(keyCode));
+debug(IntegerToString(keyClick));
+showTextBox('Введите сообщение', '', 200, TF_NUMERIC); 
+    cont := createCommand('Отправить', CM_SCREEN, 1); 
+    addCommand(cont); 
+
+    repeat 
+      delay(100); 
+    click:=getClickedCommand;  
+  until click=cont; 
+
+sosij:=getTextBoxString;
+ShowCanvas;
+zapros:=q_request('http://f0477777.xsph.ru/telehuyka/urltest.php?user='+ReadRecordStoreEntry(rs,1)+'&code='+ReadRecordStoreEntry(rs,2)+'&message='+sosij+'&peer='+thischat, GET, '', 'none');
+debug(get_data);
+close;
+repeat 
+keyCode := GetKeyPressed; 
+if KeyToAction(keyCode) = GA_UP then poz := poz + 16;
+if KeyToAction(keyCode) = GA_DOWN then poz := poz - 16;
+if keyCode = 35 then Vkid;
+if poz >= 8+line*2 then poz := 8+line*2;
+if total+poz <= GetHeight-8-line then poz := GetHeight-2-line-total;
+Delay(100);
+until keyCode<>-5;
+debug('ache)');
+end;
+if (KeyToAction(keyCode) = GA_UP) OR (KeyToAction(keyCode) = GA_DOWN) OR (load <1) then
+begin
+debug('poz:'+poz+' up:'+up);
+bg:=LoadImage('/bg.png'); //зогрузка фона
+DrawImage(bg,0,0); //вивод фона
+massiv:=xml.comb(dannie);
+xml.parse(massiv);
+debug('a');
+up:=0;
+endmessage:=19;
+imgcount:=0;
+for p:=0 to endmessage do
+begin
+if (up+poz > GetHeight-line-4) and (load=1) then p:=endmessage;
+debug(IntegerToString(up+poz));
+if (up+poz <= GetHeight-line-4) or (load=0) then Print(xml.get(7+p*3),poz+up);
+if 9+p*3 < xml.length then if xml.get(9+p*3)='image' then
+begin
+endmessage:=endmessage+1;p:=p+1;up:=up-8;
+if img[imgcount]='' then
+begin
+debug(xml.get(7+p*3));
+zapros:=q_request(xml.get(7+p*3), GET, '', 'none');
+img[imgcount]:=get_data;
+close;
+debug('zakril'+imgcount);
+end;
+debug('hoba');
+DrawImage(im.image_from_string(img[imgcount]),2,poz+up);
+imgcount:=imgcount+1;
+endmessage:=endmessage+1;p:=p+1;up:=up+8+StringToInteger(xml.get(7+p*3));
+end;
+end;
+debug('gui');
+SetColor(255,255,255);
+FillRect(0,0,240,4+line*2); //хедер
+SetColor(0,0,0); //блм
+SetFont(FONT_FACE_SYSTEM, FONT_STYLE_BOLD, FONT_SIZE_SMALL);
+DrawText(xml.get(1),40,2); // название
+SetFont(FONT_FACE_SYSTEM, FONT_STYLE_PLAIN, FONT_SIZE_SMALL);
+DrawText(xml.get(4),40,line+2); // количество участников(для конф) или онлайн(для лс)
+debug(IntegerToString(length(avas[cum])));
+if length(avas[cum])<>0 then DrawImage(im.image_from_string(avas[cum]),4,(line*2-26)/2) else DrawImage(tg,4,(line*2-26)/2);
+SetColor(255,255,255);
+FillRect(0,GetHeight-4-line,GetWidth,line+4); //футер
+SetColor(0,0,0);
+DrawText('Функции',2, GetHeight-2-line);
+DrawText('Назад',238-GetStringWidth('Назад'), GetHeight-2-line);
+if load=0 then begin
+load:=load+1;
+total:=up;
+end;
+debug(IntegerToString(load));
+Repaint;
+Delay(250);
+end;
+
+until keyCode = KE_KEY0;
+end;
+delay(90000);
+end;
+
+Procedure Phone; FORWARD;
+
+Procedure Vkid;
+begin
+k:=0;
+zapros:=q_request('http://f0477777.xsph.ru/telehuyka/dialog_debug.php?user='+ReadRecordStoreEntry(rs,1)+'&code='+ReadRecordStoreEntry(rs,2), GET, '', 'none');
+dannie:=get_data;
+close;
+DrawText('kadilak',0,0);Repaint;
+xml.parse(dannie);
+if xml.get(0) = 'br' then begin
+DeleteRecordStore('rec');
+Phone;
+end;
+DrawText('kadilak',0,100);Repaint;
+load:=0;
+if GetProperty('microedition.platform')<>'Nokia216/12.00.11 (Series30Plus)' then begin for ch:=0 to 5 do
+begin
+zapros:=q_request(xml.get(4+12*ch), GET, '', 'none');
+avas[ch]:=get_data;
+close;
+end;end;
+repeat
+keyCode := GetKeyPressed;
+if KeyToAction(keyCode) = GA_FIRE then Dialog(xml.get(1+12*cum));
+if KeyToAction(keyCode) = GA_UP then if cum > 0 then cum:=cum-1;
+if KeyToAction(keyCode) = GA_DOWN then if cum < 5 then cum:=cum+1;
+if keyCode = 35 then Halt;
+if (KeyToAction(keyCode) = GA_UP) OR (KeyToAction(keyCode) = GA_DOWN) OR (load = 0) then
+begin
+SetColor(255, 255, 255);
+FillRect(0, 0, GetWidth, GetHeight);
+SetColor(241, 241, 241);
+FillRect(0, line+4+40*cum, GetWidth, 40);
+SetColor(0, 0, 0);
+if GetProperty('microedition.platform')<>'Nokia216/12.00.11 (Series30Plus)' then if xml.get(4) = 'none' then DrawImage(tg,5,line+9) else DrawImage(im.image_from_string(avas[0]),5,line+9);
+DrawText(xml.get(7),40, line+9);
+if GetProperty('microedition.platform')<>'Nokia216/12.00.11 (Series30Plus)' then if xml.get(4+12) = 'none' then DrawImage(tg,5,line+9+40*1) else DrawImage(im.image_from_string(avas[1]),5,line+9+40*1);
+DrawText(xml.get(19),40, line+9+40*1);
+if GetProperty('microedition.platform')<>'Nokia216/12.00.11 (Series30Plus)' then if xml.get(4+12*2) = 'none' then DrawImage(tg,5,line+9+40*2) else DrawImage(im.image_from_string(avas[2]),5,line+9+40*2);
+DrawText(xml.get(31),40, line+9+40*2);
+if GetProperty('microedition.platform')<>'Nokia216/12.00.11 (Series30Plus)' then if xml.get(4+12*3) = 'none' then DrawImage(tg,5,line+9+40*3) else DrawImage(im.image_from_string(avas[3]),5,line+9+40*3);
+DrawText(xml.get(43),40, line+9+40*3);
+if GetProperty('microedition.platform')<>'Nokia216/12.00.11 (Series30Plus)' then if xml.get(4+12*4) = 'none' then DrawImage(tg,5,line+9+40*4) else DrawImage(im.image_from_string(avas[4]),5,line+9+40*4);
+DrawText(xml.get(55),40, line+9+40*4);
+if GetProperty('microedition.platform')<>'Nokia216/12.00.11 (Series30Plus)' then if xml.get(4+12*5) = 'none' then DrawImage(tg,5,line+9+40*5) else DrawImage(im.image_from_string(avas[5]),5,line+9+40*5);
+DrawText(xml.get(67),40, line+9+40*5);
+SetColor(82,126,162);
+FillRect(0,0,240,line+4);
+SetColor(255,255,255);	
+DrawText('дiологи)))',2, 2);
+SetColor(0,0,0);	
+DrawText('Функции',2, GetHeight-2-line);
+DrawText('Назад',238-GetStringWidth('Назад'), GetHeight-2-line);
+load:=1;
+Repaint;
+Delay(250);
+end;
+until false;
+end;
+
+Procedure Kod;
+begin
+phonevalue:='teststring';
+repeat
+keyCode := GetKeyClicked;
+if keyCode = 42 then begin
+zapros:=q_request('http://f0477777.xsph.ru/telehuyka/login.php?user='+ReadRecordStoreEntry(rs,1)+'&code='+getTextBoxString, GET, '', 'none');
+dannie:=get_data;
+debug(dannie);
+if dannie = 'Array' then begin
+user:=AddRecordStoreEntry(rs,getTextBoxString);
+close;
+Vkid;
+end
+else begin
+DeleteRecordStore('rec');
+load:=1;
+Phone;
+end;
+end;
+if keyCode = 35 then begin
+DeleteRecordStoreEntry(rs,1);
+Phone;
+end;
+if KeyToAction(keyCode) = GA_FIRE then begin
+showTextBox('Введите сообщение', '', 200, TF_NUMERIC); 
+    cont := createCommand('Отправить', CM_SCREEN, 1); 
+    addCommand(cont); 
+
+    repeat 
+      delay(100); 
+    click:=getClickedCommand;  
+  until click=cont; 
+
+phonevalue:=getTextBoxString;
+ShowCanvas;
+end;
+SetColor(255, 255, 255);
+FillRect(0, 0, GetWidth, GetHeight);
+SetColor(82,126,162);
+FillRect(0,0,240,line+4);
+SetColor(255,255,255);
+DrawText('код',2, 2);
+SetColor(0,0,0);
+DrawText('Код:',4, 60);
+debug('ivangoy');
+DrawText(phonevalue,8, 66+line);
+SetColor(107,170,222);
+FillRect(4, 72+2*line, GetWidth-8, 2); 
+SetColor(0,0,0);
+DrawText('Отправить',2, GetHeight-2-line);
+DrawText('выйди отсюда',238-GetStringWidth('выйди отсюда'), GetHeight-2-line);
+Repaint;
+debug(IntegerToString(keyCode));
+delay(100);
+until false;
+end;
+
+Procedure Phone;
+begin
+phonevalue:='teststring';
+repeat
+keyCode := GetKeyClicked;
+if keyCode = 42 then begin
+zapros:=q_request('http://f0477777.xsph.ru/telehuyka/login.php?phone='+getTextBoxString, GET, '', 'none');
+dannie:=get_data;
+debug(dannie);
+user:=AddRecordStoreEntry(rs,dannie);
+close;
+Kod;
+end;
+if keyCode = 35 then Halt;
+if KeyToAction(keyCode) = GA_FIRE then begin
+showTextBox('Введите сообщение', '', 200, TF_ANY); 
+    cont := createCommand('Отправить', CM_SCREEN, 1); 
+    addCommand(cont); 
+
+    repeat 
+      delay(100); 
+    click:=getClickedCommand;  
+  until click=cont; 
+
+phonevalue:=getTextBoxString;
+ShowCanvas;
+end;
+SetColor(255, 255, 255);
+FillRect(0, 0, GetWidth, GetHeight);
+SetColor(82,126,162);
+FillRect(0,0,240,line+4);
+SetColor(255,255,255);
+DrawText('адай кокию',2, 2);
+SetColor(0,0,0);
+DrawText('Номер телефона:',4, 60);
+debug('ivangoy');
+DrawText(phonevalue,8, 66+line);
+SetColor(107,170,222);
+FillRect(4, 72+2*line, GetWidth-8, 2); 
+if load=1 then begin SetColor(255,0,0);
+DrawText('код неправильний епта',(240-GetStringWidth('код неправильний епта'))/2,110);
+end;
+SetColor(0,0,0);
+DrawText('Отправить',2, GetHeight-2-line);
+DrawText('выйди отсюда',238-GetStringWidth('выйди отсюда'), GetHeight-2-line);
+Repaint;
+debug(IntegerToString(keyCode));
+delay(100);
+until false;
+end;
+
+begin
+SetFont(FONT_FACE_SYSTEM,  
+            FONT_STYLE_PLAIN,  
+            FONT_SIZE_SMALL);
+hh:=GetStringHeight('W')/2; nn:='~'; line:=hh*2;//я незнаю што ета строка делоет
+if GetProperty('microedition.platform')<>'Nokia216/12.00.11 (Series30Plus)' then begin tg:=LoadImage('/tg.png');
+tglogo:=LoadImage('/tglogo.png');
+DrawImage(tglogo,(GetWidth-200)/2,(GetHeight-240-hh)/2); end;
+DrawText('Загрузка...',(GetWidth-GetStringWidth('Загрузка'))/2, GetHeight-40-hh); 
+Repaint;
+if length(avas[0])=0 then debug('liberaha'); // проверка на несуществование
+rs:=OpenRecordStore('rec');
+next:=GetRecordStoreSize(rs);
+debug(IntegerToString(GetRecordStoreSize(rs)));
+debug(IntegerToString(GetRecordStoreNextId(rs)));
+debug(ReadRecordStoreEntry(rs,1));
+debug(ReadRecordStoreEntry(rs,2));
+if next=2 then Vkid;
+if next=1 then Kod;
+if next=0 then Phone;
+repeat
+keyCode := GetKeyPressed;
+if KeyToAction(keyCode) = GA_FIRE then Vkid;
+until false;
+end.
