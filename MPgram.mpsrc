@@ -75,7 +75,7 @@ Procedure Vkid; FORWARD;
 
 Procedure Dialog(thischat: string);
 begin
-zapros:=q_request('http://f0477777.xsph.ru/telehuyka/?peer='+thischat+'&user='+ReadRecordStoreEntry(rs,1)+'&code='+ReadRecordStoreEntry(rs,2), GET, '', 'none');
+zapros:=q_request('http://<сервер>/chat.php?peer='+thischat+'&user='+ReadRecordStoreEntry(rs,1)+'&code='+ReadRecordStoreEntry(rs,2), GET, '', 'none');
 dannie:=get_data;
 close;
 poz:=8+line*2;
@@ -103,7 +103,7 @@ showTextBox('Введите сообщение', '', 200, TF_NUMERIC);
 
 sosij:=getTextBoxString;
 ShowCanvas;
-zapros:=q_request('http://f0477777.xsph.ru/telehuyka/urltest.php?user='+ReadRecordStoreEntry(rs,1)+'&code='+ReadRecordStoreEntry(rs,2)+'&message='+sosij+'&peer='+thischat, GET, '', 'none');
+zapros:=q_request('http://<сервер>/send.php?user='+ReadRecordStoreEntry(rs,1)+'&code='+ReadRecordStoreEntry(rs,2)+'&message='+sosij+'&peer='+thischat, GET, '', 'none');
 debug(get_data);
 close;
 repeat 
@@ -184,7 +184,7 @@ Procedure Phone; FORWARD;
 Procedure Vkid;
 begin
 k:=0;
-zapros:=q_request('http://f0477777.xsph.ru/telehuyka/dialog_debug.php?user='+ReadRecordStoreEntry(rs,1)+'&code='+ReadRecordStoreEntry(rs,2), GET, '', 'none');
+zapros:=q_request('http://<сервер>/chats.php?user='+ReadRecordStoreEntry(rs,1)+'&code='+ReadRecordStoreEntry(rs,2), GET, '', 'none');
 dannie:=get_data;
 close;
 DrawText('kadilak',0,0);Repaint;
@@ -246,7 +246,7 @@ phonevalue:='teststring';
 repeat
 keyCode := GetKeyClicked;
 if keyCode = 42 then begin
-zapros:=q_request('http://f0477777.xsph.ru/telehuyka/login.php?user='+ReadRecordStoreEntry(rs,1)+'&code='+getTextBoxString, GET, '', 'none');
+zapros:=q_request('http://<сервер>/login.php?user='+ReadRecordStoreEntry(rs,1)+'&code='+getTextBoxString, GET, '', 'none');
 dannie:=get_data;
 debug(dannie);
 if dannie = 'Array' then begin
@@ -304,7 +304,7 @@ phonevalue:='teststring';
 repeat
 keyCode := GetKeyClicked;
 if keyCode = 42 then begin
-zapros:=q_request('http://f0477777.xsph.ru/telehuyka/login.php?phone='+getTextBoxString, GET, '', 'none');
+zapros:=q_request('http://<сервер>/login.php?phone='+getTextBoxString, GET, '', 'none');
 dannie:=get_data;
 debug(dannie);
 user:=AddRecordStoreEntry(rs,dannie);
